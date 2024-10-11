@@ -25,7 +25,7 @@ class AlphaZeroModel(nn.Module):
 
 # Create the ConnectX environment
 env = make("connectx", debug=True)
-state_size = len(env.reset().board)
+state_size = len(env.reset()['board'])
 action_size = env.configuration.columns
 
 # Initialize the AlphaZero model
@@ -43,7 +43,7 @@ replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
 
 # Function to perform Monte Carlo Tree Search (MCTS)
 def mcts(observation, configuration, model, n_simulations=50):
-    valid_actions = [c for c in range(configuration.columns) if observation.board[c] == 0]
+    valid_actions = [c for c in range(configuration.columns) if observation['board'][c] == 0]
     action_visits = {action: 0 for action in valid_actions}
     action_values = {action: 0 for action in valid_actions}
     
@@ -51,7 +51,7 @@ def mcts(observation, configuration, model, n_simulations=50):
         # Randomly simulate a game for each action
         for action in valid_actions:
             simulated_env = make("connectx", debug=True).train([None, "random"])
-            simulated_observation = simulated_env.reset(observation)
+            simulated_observation = simulated_env.reset()
             _, reward, done, _ = simulated_env.step(action)
             if done:
                 action_values[action] += reward
@@ -77,7 +77,7 @@ for episode in range(NUM_EPISODES):
         # Use MCTS to decide on an action
         action = mcts(observation, env.configuration, model)
         next_observation, reward, done, _ = trainer.step(action)
-        game_data.append((observation.board, action, reward, next_observation.board, done))
+        game_data.append((observation['board'], action, reward, next_observation['board'], done))
         observation = next_observation
     
     # Store game data in replay buffer
@@ -107,7 +107,7 @@ for episode in range(NUM_EPISODES):
 
 # Create an AlphaZero-based agent
 def my_agent(observation, configuration):
-    board_state = np.array(observation.board, dtype=np.float32)
+    board_state = np.array(observation['board'], dtype=np.float32)
     board_tensor = torch.tensor(board_state).unsqueeze(0)
     with torch.no_grad():
         policy, _ = model(board_tensor)
