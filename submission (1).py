@@ -25,7 +25,7 @@ class AlphaZeroModel(nn.Module):
 
 # Create the ConnectX environment
 env = make("connectx", debug=True)
-state_size = len(env.reset()['board'])
+state_size = len(env.reset())
 action_size = env.configuration.columns
 
 # Initialize the AlphaZero model
@@ -77,7 +77,7 @@ for episode in range(NUM_EPISODES):
         # Use MCTS to decide on an action
         action = mcts(observation, env.configuration, model)
         next_observation, reward, done, _ = trainer.step(action)
-        game_data.append((observation['board'], action, reward, next_observation['board'], done))
+        game_data.append((observation, action, reward, next_observation, done))
         observation = next_observation
     
     # Store game data in replay buffer
@@ -107,11 +107,11 @@ for episode in range(NUM_EPISODES):
 
 # Create an AlphaZero-based agent
 def my_agent(observation, configuration):
-    board_state = np.array(observation['board'], dtype=np.float32)
+    board_state = np.array(observation, dtype=np.float32)
     board_tensor = torch.tensor(board_state).unsqueeze(0)
     with torch.no_grad():
         policy, _ = model(board_tensor)
-    valid_actions = [c for c in range(configuration.columns) if observation.board[c] == 0]
+    valid_actions = [c for c in range(configuration.columns) if observation[c] == 0]
     policy_values = [(policy[0, c].item(), c) for c in valid_actions]
     return max(policy_values, key=lambda x: x[0])[1]
 
